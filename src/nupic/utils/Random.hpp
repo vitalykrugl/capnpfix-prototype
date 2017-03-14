@@ -82,7 +82,7 @@ namespace nupic {
   {
   public:
 
-    Random(unsigned long seed = 0);
+    Random(UInt64 seed = 0);
 
     // support copy constructor and operator= -- these require non-default
     // implementations because of the impl_ pointer.

@@ -126,7 +126,7 @@ Random::~Random()
 }
 
 
-Random::Random(unsigned long seed)
+Random::Random(UInt64 seed)
 {
   seed_ = seed;
 
