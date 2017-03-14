@@ -31,13 +31,11 @@
 #include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Random.hpp>
-#include <nupic/algorithms/Connections.hpp>
 
 #include <nupic/proto/TemporalMemoryProto.capnp.h>
 
 using namespace std;
 using namespace nupic;
-using namespace nupic::algorithms::connections;
 
 namespace nupic {
   namespace algorithms {
@@ -71,9 +69,6 @@ namespace nupic {
 
         /**
          * Initialize the temporal memory (TM) using the given parameters.
-         *
-         * @param columnDimensions
-         * Dimensions of the column space
          *
          * @param cellsPerColumn
          * Number of cells per column
@@ -125,34 +120,12 @@ namespace nupic {
          * something like 4% * 0.01 = 0.0004).
          */
         TemporalMemory(
-          vector<UInt> columnDimensions,
-          UInt cellsPerColumn = 32,
-          UInt activationThreshold = 13,
-          Permanence initialPermanence = 0.21,
-          Permanence connectedPermanence = 0.50,
-          UInt minThreshold = 10,
-          UInt maxNewSynapseCount = 20,
-          Permanence permanenceIncrement = 0.10,
-          Permanence permanenceDecrement = 0.10,
-          Permanence predictedSegmentDecrement = 0.0,
-          Int seed = 42,
-          UInt maxSegmentsPerCell=255,
-          UInt maxSynapsesPerSegment=255);
+          unsigned cellsPerColumn,
+          int seed = 42);
 
         virtual void initialize(
-          vector<UInt> columnDimensions = { 2048 },
-          UInt cellsPerColumn = 32,
-          UInt activationThreshold = 13,
-          Permanence initialPermanence = 0.21,
-          Permanence connectedPermanence = 0.50,
-          UInt minThreshold = 10,
-          UInt maxNewSynapseCount = 20,
-          Permanence permanenceIncrement = 0.10,
-          Permanence permanenceDecrement = 0.10,
-          Permanence predictedSegmentDecrement = 0.0,
-          Int seed = 42,
-          UInt maxSegmentsPerCell=255,
-          UInt maxSynapsesPerSegment=255);
+          unsigned cellsPerColumn = 32,
+          int seed = 42);
 
         virtual ~TemporalMemory();
 
@@ -161,302 +134,42 @@ namespace nupic {
         //----------------------------------------------------------------------
 
         /**
+         * Returns the number of cells per column.
+         *
+         * @returns Integer number of cells per column
+         */
+        unsigned getCellsPerColumn() const;
+
+        /**
          * Get the version number of for the TM implementation.
          *
          * @returns Integer version number.
          */
-        virtual UInt version() const;
+        virtual unsigned version() const;
 
         /**
          * This *only* updates _rng to a new Random using seed.
          *
          * @returns Integer version number.
          */
-        void seed_(UInt64 seed);
-
-        /**
-         * Indicates the start of a new sequence.
-         * Resets sequence state of the TM.
-         */
-        virtual void reset();
-
-        /**
-         * Calculate the active cells, using the current active columns and
-         * dendrite segments. Grow and reinforce synapses.
-         *
-         * @param activeColumnsSize
-         * Size of activeColumns.
-         *
-         * @param activeColumns
-         * A sorted list of active column indices.
-         *
-         * @param learn
-         * If true, reinforce / punish / grow synapses.
-         */
-        void activateCells(
-          size_t activeColumnsSize,
-          const UInt activeColumns[],
-          bool learn = true);
-
-        /**
-         * Calculate dendrite segment activity, using the current active cells.
-         *
-         * @param learn
-         * If true, segment activations will be recorded. This information is
-         * used during segment cleanup.
-         */
-        void activateDendrites(bool learn = true);
-
-        /**
-         * Perform one time step of the Temporal Memory algorithm.
-         *
-         * This method calls activateCells, then calls activateDendrites. Using
-         * the TemporalMemory via its compute method ensures that you'll always
-         * be able to call getPredictiveCells to get predictions for the next
-         * time step.
-         *
-         * @param activeColumnsSize
-         * Number of active columns.
-         *
-         * @param activeColumns
-         * Sorted list of indices of active columns.
-         *
-         * @param learn
-         * Whether or not learning is enabled.
-         */
-        virtual void compute(
-          size_t activeColumnsSize,
-          const UInt activeColumns[],
-          bool learn = true);
+        void seed_(unsigned long seed);
 
 
         // ==============================
         //  Helper functions
         // ==============================
 
-        /**
-         * Returns the indices of cells that belong to a column.
-         *
-         * @param column Column index
-         *
-         * @return (vector<CellIdx>) Cell indices
-         */
-        vector<CellIdx> cellsForColumn(Int column);
-
-        /**
-         * Returns the number of cells in this layer.
-         *
-         * @return (int) Number of cells
-         */
-        UInt numberOfCells(void);
-
-        /**
-        * Returns the indices of the active cells.
-        *
-        * @returns (std::vector<CellIdx>) Vector of indices of active cells.
-        */
-        vector<CellIdx> getActiveCells() const;
-
-        /**
-        * Returns the indices of the predictive cells.
-        *
-        * @returns (std::vector<CellIdx>) Vector of indices of predictive cells.
-        */
-        vector<CellIdx> getPredictiveCells() const;
-
-        /**
-        * Returns the indices of the winner cells.
-        *
-        * @returns (std::vector<CellIdx>) Vector of indices of winner cells.
-        */
-        vector<CellIdx> getWinnerCells() const;
-
-        /**
-        * Returns the indices of the matching cells.
-        *
-        * @returns (std::vector<CellIdx>) Vector of indices of matching cells.
-        */
-        vector<CellIdx> getMatchingCells() const;
-
-        vector<Segment> getActiveSegments() const;
-        vector<Segment> getMatchingSegments() const;
-
-        /**
-         * Returns the dimensions of the columns in the region.
-         *
-         * @returns Integer number of column dimension
-         */
-        vector<UInt> getColumnDimensions() const;
-
-        /**
-         * Returns the total number of columns.
-         *
-         * @returns Integer number of column numbers
-         */
-        UInt numberOfColumns() const;
-
-        /**
-         * Returns the number of cells per column.
-         *
-         * @returns Integer number of cells per column
-         */
-        UInt getCellsPerColumn() const;
-
-        /**
-         * Returns the activation threshold.
-         *
-         * @returns Integer number of the activation threshold
-         */
-        UInt getActivationThreshold() const;
-        void setActivationThreshold(UInt);
-
-        /**
-         * Returns the initial permanence.
-         *
-         * @returns Initial permanence
-         */
-        Permanence getInitialPermanence() const;
-        void setInitialPermanence(Permanence);
-
-        /**
-         * Returns the connected permanance.
-         *
-         * @returns Returns the connected permanance
-         */
-        Permanence getConnectedPermanence() const;
-        void setConnectedPermanence(Permanence);
-
-        /**
-         * Returns the minimum threshold.
-         *
-         * @returns Integer number of minimum threshold
-         */
-        UInt getMinThreshold() const;
-        void setMinThreshold(UInt);
-
-        /**
-         * Returns the maximum number of synapses that can be added to a segment
-         * in a single time step.
-         *
-         * @returns Integer number of maximum new synapse count
-         */
-        UInt getMaxNewSynapseCount() const;
-        void setMaxNewSynapseCount(UInt);
-
-        /**
-         * Returns the permanence increment.
-         *
-         * @returns Returns the Permanence increment
-         */
-        Permanence getPermanenceIncrement() const;
-        void setPermanenceIncrement(Permanence);
-
-        /**
-         * Returns the permanence decrement.
-         *
-         * @returns Returns the Permanence decrement
-         */
-        Permanence getPermanenceDecrement() const;
-        void setPermanenceDecrement(Permanence);
-
-        /**
-         * Returns the predicted Segment decrement.
-         *
-         * @returns Returns the segment decrement
-         */
-        Permanence getPredictedSegmentDecrement() const;
-        void setPredictedSegmentDecrement(Permanence);
-
-        /**
-         * Raises an error if cell index is invalid.
-         *
-         * @param cell Cell index
-         */
-        bool _validateCell(CellIdx cell);
-
-        /**
-         * Save (serialize) the current state of the spatial pooler to the
-         * specified file.
-         *
-         * @param fd A valid file descriptor.
-         */
-        virtual void save(ostream& outStream) const;
 
         using Serializable::write;
         virtual void write(TemporalMemoryProto::Builder& proto) const override;
 
-        /**
-         * Load (deserialize) and initialize the spatial pooler from the
-         * specified input stream.
-         *
-         * @param inStream A valid istream.
-         */
-        virtual void load(istream& inStream);
-
         using Serializable::read;
         virtual void read(TemporalMemoryProto::Reader& proto) override;
 
-        /**
-         * Returns the number of bytes that a save operation would result in.
-         * Note: this method is currently somewhat inefficient as it just does
-         * a full save into an ostream and counts the resulting size.
-         *
-         * @returns Integer number of bytes
-         */
-        virtual UInt persistentSize() const;
-
-        //----------------------------------------------------------------------
-        // Debugging helpers
-        //----------------------------------------------------------------------
-
-        /**
-         * Print the main TM creation parameters
-         */
-        void printParameters();
-
-        /**
-         * Returns the index of the column that a cell belongs to.
-         *
-         * @param cell Cell index
-         *
-         * @return (int) Column index
-         */
-        Int columnForCell(CellIdx cell);
-
-        /**
-         * Print the given UInt array in a nice format
-         */
-        void printState(vector<UInt> &state);
-
-        /**
-         * Print the given Real array in a nice format
-         */
-        void printState(vector<Real> &state);
-
       protected:
-        UInt numColumns_;
-        vector<UInt> columnDimensions_;
         UInt cellsPerColumn_;
-        UInt activationThreshold_;
-        UInt minThreshold_;
-        UInt maxNewSynapseCount_;
-        Permanence initialPermanence_;
-        Permanence connectedPermanence_;
-        Permanence permanenceIncrement_;
-        Permanence permanenceDecrement_;
-        Permanence predictedSegmentDecrement_;
-
-        vector<CellIdx> activeCells_;
-        vector<CellIdx> winnerCells_;
-        vector<Segment> activeSegments_;
-        vector<Segment> matchingSegments_;
-        vector<UInt32> numActiveConnectedSynapsesForSegment_;
-        vector<UInt32> numActivePotentialSynapsesForSegment_;
 
         Random rng_;
-
-      public:
-        Connections connections;
       };
 
     } // end namespace temporal_memory

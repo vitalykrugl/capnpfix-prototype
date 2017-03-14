@@ -200,19 +200,14 @@ message(STATUS "PYTHON_LIBRARIES    = ${PYTHON_LIBRARIES}")
 # Python support
 #
 set(src_py_support_files
-    nupic/py_support/NumpyVector.cpp
-    nupic/py_support/PyArray.cpp
     nupic/py_support/PyHelpers.cpp
-    nupic/py_support/PythonStream.cpp
     nupic/py_support/PyCapnp.cpp
-    nupic/bindings/PySparseTensor.cpp
 )
 
 #
 # pycapnp integration
 #
 if(NOT "${PLATFORM}" STREQUAL "windows")
-  list(APPEND src_py_support_files nupic/py_support/CapnpToPycapnp.cpp)
 
   # Add the pycapnp Python package headers to includes
   execute_process(
@@ -239,23 +234,8 @@ endif()
 # List all .capnp files here. The C++ files will be generated and included
 # when compiling later on.
 set(src_capnp_specs_rel
-  nupic/proto/ArrayProto.capnp
-  nupic/proto/BitHistory.capnp
-  nupic/proto/ClaClassifier.capnp
-  nupic/proto/ConnectionsProto.capnp
-  nupic/proto/LinkProto.capnp
-  nupic/proto/Map.capnp
-  nupic/proto/NetworkProto.capnp
-  nupic/proto/PyRegionProto.capnp
   nupic/proto/RandomProto.capnp
-  nupic/proto/RegionProto.capnp
-  nupic/proto/SparseBinaryMatrixProto.capnp
-  nupic/proto/SparseMatrixProto.capnp
-  nupic/proto/SpatialPoolerProto.capnp
-  nupic/proto/SdrClassifier.capnp
   nupic/proto/TemporalMemoryProto.capnp
-  nupic/proto/TestNodeProto.capnp
-  nupic/proto/VectorFileSensorProto.capnp
 )
 
 # Create custom command for generating C++ code from .capnp schema files.
@@ -310,79 +290,11 @@ message(STATUS "src_common_os_libs        = ${src_common_os_libs}")
 set(src_lib_static_nupiccore_solo nupic_core_solo)
 
 set(src_nupiccore_srcs
-    nupic/algorithms/Anomaly.cpp
-    nupic/algorithms/BitHistory.cpp
-    nupic/algorithms/Cell.cpp
-    nupic/algorithms/Cells4.cpp
-    nupic/algorithms/ClassifierResult.cpp
-    nupic/algorithms/CondProbTable.cpp
-    nupic/algorithms/Connections.cpp
-    nupic/algorithms/FastClaClassifier.cpp
-    nupic/algorithms/GaborNode.cpp
-    nupic/algorithms/ImageSensorLite.cpp
-    nupic/algorithms/InSynapse.cpp
-    nupic/algorithms/OutSynapse.cpp
-    nupic/algorithms/Segment.cpp
-    nupic/algorithms/SegmentUpdate.cpp
-    nupic/algorithms/SDRClassifier.cpp
-    nupic/algorithms/SpatialPooler.cpp
     nupic/algorithms/TemporalMemory.cpp
-    nupic/algorithms/Svm.cpp
-    nupic/encoders/ScalarEncoder.cpp
-    nupic/encoders/ScalarSensor.cpp
-    nupic/engine/Collections.cpp
-    nupic/engine/Input.cpp
-    nupic/engine/Link.cpp
-    nupic/engine/LinkPolicyFactory.cpp
-    nupic/engine/Network.cpp
-    nupic/engine/NuPIC.cpp
-    nupic/engine/Output.cpp
-    nupic/engine/Region.cpp
-    nupic/engine/RegionImpl.cpp
-    nupic/engine/RegionImplFactory.cpp
-    nupic/engine/RegionIo.cpp
-    nupic/engine/RegionParameters.cpp
-    nupic/engine/Spec.cpp
-    nupic/engine/TestFanIn2LinkPolicy.cpp
-    nupic/engine/TestNode.cpp
-    nupic/engine/UniformLinkPolicy.cpp
-    nupic/engine/YAMLUtils.cpp
-    nupic/math/SparseMatrixAlgorithms.cpp
-    nupic/math/SparseMatrixConnections.cpp
-    nupic/math/StlIo.cpp
-    nupic/math/Topology.cpp
-    nupic/ntypes/ArrayBase.cpp
-    nupic/ntypes/Buffer.cpp
-    nupic/ntypes/BundleIO.cpp
-    nupic/ntypes/Collection.cpp
-    nupic/ntypes/Dimensions.cpp
-    nupic/ntypes/MemParser.cpp
-    nupic/ntypes/Scalar.cpp
-    nupic/ntypes/Value.cpp
-    nupic/os/Directory.cpp
-    nupic/os/DynamicLibrary.cpp
-    nupic/os/Env.cpp
-    nupic/os/FStream.cpp
-    nupic/os/OS.cpp
-    nupic/os/OSUnix.cpp
-    nupic/os/OSWin.cpp
-    nupic/os/Path.cpp
-    nupic/os/Regex.cpp
-    nupic/os/Timer.cpp
-    nupic/regions/PyRegion.cpp
-    nupic/regions/VectorFile.cpp
-    nupic/regions/VectorFileEffector.cpp
-    nupic/regions/VectorFileSensor.cpp
     nupic/types/BasicType.cpp
-    nupic/types/Fraction.cpp
-    nupic/utils/ArrayProtoUtils.cpp
     nupic/utils/LoggingException.cpp
     nupic/utils/LogItem.cpp
-    nupic/utils/MovingAverage.cpp
-    nupic/utils/Random.cpp
-    nupic/utils/StringUtils.cpp
-    nupic/utils/TRandom.cpp
-    nupic/utils/Watcher.cpp)
+    nupic/utils/Random.cpp)
 
 set(src_lib_static_nupiccore_srcs
     ${src_capnp_generated_srcs}
@@ -398,12 +310,12 @@ message(STATUS "src_lib_static_nupiccore_compile_flags = ${src_lib_static_nupicc
 add_library(${src_lib_static_nupiccore_solo} STATIC
             ${src_lib_static_nupiccore_srcs})
 # nupic_core_solo sources depend on headers installed by these external projects
-add_dependencies(${src_lib_static_nupiccore_solo}
-                 ${YAML_CPP_STATIC_LIB_TARGET}
-                 ${YAML_STATIC_LIB_TARGET}
-                 ${APR1_STATIC_LIB_TARGET}
-                 ${APRUTIL1_STATIC_LIB_TARGET}
-                 ${Z_STATIC_LIB_TARGET})
+#add_dependencies(${src_lib_static_nupiccore_solo}
+#                 ${YAML_CPP_STATIC_LIB_TARGET}
+#                 ${YAML_STATIC_LIB_TARGET}
+#                 ${APR1_STATIC_LIB_TARGET}
+#                 ${APRUTIL1_STATIC_LIB_TARGET}
+#                 ${Z_STATIC_LIB_TARGET})
 set_target_properties(${src_lib_static_nupiccore_solo} PROPERTIES COMPILE_FLAGS
                       ${src_lib_static_nupiccore_compile_flags})
 if(${NUPIC_IWYU})
@@ -424,12 +336,14 @@ include(src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
 
 set(src_lib_static_nupiccore_combined nupic_core)
 
-set(src_external_static_libs
-    ${YAML_CPP_STATIC_LIB_TARGET}
-    ${YAML_STATIC_LIB_TARGET}
-    ${APR1_STATIC_LIB_TARGET}
-    ${APRUTIL1_STATIC_LIB_TARGET}
-    ${Z_STATIC_LIB_TARGET})
+set(src_external_static_libs)
+
+#set(src_external_static_libs
+#    ${YAML_CPP_STATIC_LIB_TARGET}
+#    ${YAML_STATIC_LIB_TARGET}
+#    ${APR1_STATIC_LIB_TARGET}
+#    ${APRUTIL1_STATIC_LIB_TARGET}
+#    ${Z_STATIC_LIB_TARGET})
 
 # Add capnproto static lib when building nupic_core static lib without python
 # extensions. The extensions have their own logic governing whether to include
@@ -468,142 +382,13 @@ message(STATUS "src_common_test_exe_libs = ${src_common_test_exe_libs}")
 
 
 #
-# Setup test_cpp_region
-#
-set(src_executable_cppregiontest cpp_region_test)
-add_executable(${src_executable_cppregiontest} test/integration/CppRegionTest.cpp)
-target_link_libraries(${src_executable_cppregiontest} ${src_common_test_exe_libs})
-set_target_properties(${src_executable_cppregiontest} PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-set_target_properties(${src_executable_cppregiontest} PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-add_custom_target(tests_cpp_region
-                  COMMAND ${src_executable_cppregiontest}
-                  DEPENDS ${src_executable_cppregiontest}
-                  COMMENT "Executing test ${src_executable_cppregiontest}"
-                  VERBATIM)
-
-#
-# Setup test_py_region
-#
-set(src_executable_pyregiontest py_region_test)
-add_executable(${src_executable_pyregiontest} test/integration/PyRegionTest.cpp)
-target_link_libraries(${src_executable_pyregiontest} ${src_common_test_exe_libs})
-set_target_properties(${src_executable_pyregiontest}
-                      PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-set_target_properties(${src_executable_pyregiontest}
-                      PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-add_custom_target(tests_py_region
-                  COMMAND ${src_executable_pyregiontest}
-                  DEPENDS ${src_executable_pyregiontest}
-                  COMMENT "Executing test ${src_executable_pyregiontest}"
-                  VERBATIM)
-
-#
-# Setup test_connections_performance
-#
-set(src_executable_connectionsperformancetest connections_performance_test)
-add_executable(${src_executable_connectionsperformancetest}
-               test/integration/ConnectionsPerformanceTest.cpp)
-target_link_libraries(${src_executable_connectionsperformancetest}
-                      ${src_common_test_exe_libs})
-set_target_properties(${src_executable_connectionsperformancetest}
-                      PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-set_target_properties(${src_executable_connectionsperformancetest}
-                      PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-add_custom_target(tests_connections_performance
-                  COMMAND ${src_executable_connectionsperformancetest}
-                  DEPENDS ${src_executable_connectionsperformancetest}
-                  COMMENT "Executing test ${src_executable_connectionsperformancetest}"
-                  VERBATIM)
-
-#
-# Setup helloregion example
-#
-set(src_executable_helloregion helloregion)
-add_executable(${src_executable_helloregion} examples/regions/HelloRegions.cpp)
-target_link_libraries(${src_executable_helloregion} ${src_common_test_exe_libs})
-set_target_properties(${src_executable_helloregion}
-                      PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-set_target_properties(${src_executable_helloregion}
-                      PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-
-#
-# Setup prototest example
-#
-set(src_executable_prototest prototest)
-add_executable(${src_executable_prototest} examples/prototest.cpp)
-target_link_libraries(${src_executable_prototest} ${src_common_test_exe_libs})
-set_target_properties(${src_executable_prototest}
-                      PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-set_target_properties(${src_executable_prototest}
-                      PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-
-#
-# Setup HelloSP_TP example
-#
-set(src_executable_hellosptp hello_sp_tp)
-add_executable(${src_executable_hellosptp} examples/algorithms/HelloSP_TP.cpp)
-target_link_libraries(${src_executable_hellosptp} ${src_common_test_exe_libs})
-set_target_properties(${src_executable_hellosptp}
-                      PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-set_target_properties(${src_executable_hellosptp}
-                      PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-
-
-#
 # Setup gtests
 #
 set(src_executable_gtests unit_tests)
 add_executable(${src_executable_gtests}
-               test/unit/algorithms/AnomalyTest.cpp
-               test/unit/algorithms/Cells4Test.cpp
-               test/unit/algorithms/CondProbTableTest.cpp
-               test/unit/algorithms/ConnectionsTest.cpp
-               test/unit/algorithms/FastCLAClassifierTest.cpp
-               test/unit/algorithms/NearestNeighborUnitTest.cpp
-               test/unit/algorithms/SDRClassifierTest.cpp
-               test/unit/algorithms/SegmentTest.cpp
-               test/unit/algorithms/SpatialPoolerTest.cpp
-               test/unit/algorithms/TemporalMemoryTest.cpp
-               test/unit/encoders/ScalarEncoderTest.cpp
-               test/unit/engine/InputTest.cpp
-               test/unit/engine/NetworkTest.cpp
-               test/unit/engine/UniformLinkPolicyTest.cpp
-               test/unit/engine/YAMLUtilsTest.cpp
-               test/unit/math/DenseTensorUnitTest.cpp
-               test/unit/math/DomainUnitTest.cpp
-               test/unit/math/IndexUnitTest.cpp
-               test/unit/math/MathsTest.cpp
-               test/unit/math/SegmentMatrixAdapterTest.cpp
-               test/unit/math/SparseBinaryMatrixTest.cpp
-               test/unit/math/SparseMatrix01UnitTest.cpp
-               test/unit/math/SparseMatrixTest.cpp
-               test/unit/math/SparseMatrixUnitTest.cpp
-               test/unit/math/SparseTensorUnitTest.cpp
-               test/unit/math/TopologyTest.cpp
-               test/unit/ntypes/ArrayTest.cpp
-               test/unit/ntypes/BufferTest.cpp
-               test/unit/ntypes/CollectionTest.cpp
-               test/unit/ntypes/DimensionsTest.cpp
-               test/unit/ntypes/MemParserTest.cpp
-               test/unit/ntypes/MemStreamTest.cpp
-               test/unit/ntypes/NodeSetTest.cpp
-               test/unit/ntypes/ScalarTest.cpp
-               test/unit/ntypes/ValueTest.cpp
-               test/unit/os/DirectoryTest.cpp
-               test/unit/os/EnvTest.cpp
-               test/unit/os/OSTest.cpp
-               test/unit/os/PathTest.cpp
-               test/unit/os/RegexTest.cpp
-               test/unit/os/TimerTest.cpp
-               test/unit/py_support/PyHelpersTest.cpp
-               test/unit/types/BasicTypeTest.cpp
-               test/unit/types/ExceptionTest.cpp
-               test/unit/types/FractionTest.cpp
                test/unit/UnitTestMain.cpp
-               test/unit/utils/GroupByTest.cpp
-               test/unit/utils/MovingAverageTest.cpp
-               test/unit/utils/RandomTest.cpp
-               test/unit/utils/WatcherTest.cpp)
+               test/unit/algorithms/TemporalMemoryTest.cpp
+               test/unit/utils/RandomTest.cpp)
 target_link_libraries(${src_executable_gtests}
                       ${src_lib_static_gtest}
                       ${src_common_test_exe_libs})
@@ -614,22 +399,6 @@ add_custom_target(tests_unit
                   COMMAND ${src_executable_gtests}
                   DEPENDS ${src_executable_gtests}
                   COMMENT "Executing test ${src_executable_gtests}"
-                  VERBATIM)
-
-#
-# tests_all just calls other targets
-#
-# TODO This doesn't seem to have any effect; it's probably because the DEPENDS
-# of add_custom_target must be files, not other high-level targets. If really
-# need to run these tests during build, then either the individual
-# add_custom_target of the individual test runners should be declared with the
-# ALL option, or tests_all target whould be declared without DEPENDS, and
-# add_dependencies should be used to set it's dependencies on the custom targets
-# of the inidividual test runners.
-add_custom_target(tests_all
-                  DEPENDS tests_cpp_region
-                  DEPENDS tests_unit
-                  COMMENT "Running all tests"
                   VERBATIM)
 
 
@@ -841,9 +610,6 @@ if (NUPIC_BUILD_PYEXT_MODULES)
   # Algorithms
   build_extension("algorithms")
 
-  # Engine
-  build_extension("engine_internal")
-
   # Math
   build_extension("math")
 
@@ -856,12 +622,6 @@ endif() # NUPIC_BUILD_PYEXT_MODULES
 install(TARGETS
         ${src_lib_static_nupiccore_combined}
         ${src_lib_static_gtest}
-        ${src_executable_helloregion}
-        ${src_executable_cppregiontest}
-        ${src_executable_pyregiontest}
-        ${src_executable_connectionsperformancetest}
-        ${src_executable_hellosptp}
-        ${src_executable_prototest}
         ${src_executable_gtests}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
