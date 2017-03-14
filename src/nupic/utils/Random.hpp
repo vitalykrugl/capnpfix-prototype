@@ -81,13 +81,8 @@ namespace nupic {
   class Random : public Serializable<RandomProto>
   {
   public:
-    /**
-     * Retrieve the seeder. If seeder not set, allocates the
-     * singleton and and initializes the seeder.
-     */
-    static RandomSeedFuncPtr getSeeder();
 
-    Random(UInt64 seed = 0);
+    Random(unsigned long seed = 0);
 
     // support copy constructor and operator= -- these require non-default
     // implementations because of the impl_ pointer.
@@ -106,117 +101,13 @@ namespace nupic {
     void read(RandomProto::Reader& proto) override;
 
     // return a value uniformly distributed between 0 and max-1
-    UInt32 getUInt32(UInt32 max = MAX32);
-    UInt64 getUInt64(UInt64 max = MAX64);
-    // return a double uniformly distributed on 0...1.0
-    Real64 getReal64();
-
-    // populate choices with a random selection of nChoices elements from
-    // population. throws exception when nPopulation < nChoices
-    // templated functions must be defined in header
-    template <typename T>
-    void sample(T population[], UInt32 nPopulation,
-                T choices[], UInt32 nChoices)
-    {
-      if (nChoices == 0)
-      {
-        return;
-      }
-      if (nChoices > nPopulation)
-      {
-        NTA_THROW << "population size must be greater than number of choices";
-      }
-      UInt32 nextChoice = 0;
-      for (UInt32 i = 0; i < nPopulation; ++i)
-      {
-        if (getUInt32(nPopulation - i) < (nChoices - nextChoice))
-        {
-          choices[nextChoice] = population[i];
-          ++nextChoice;
-          if (nextChoice == nChoices)
-          {
-            break;
-          }
-        }
-      }
-    }
-
-    // randomly shuffle the elements
-    template <class RandomAccessIterator>
-    void shuffle(RandomAccessIterator first, RandomAccessIterator last)
-    {
-      UInt n = last - first;
-      while (first != last)
-      {
-        // Pick a random position between the current and the end to swap the
-        // current element with.
-        UInt i = getUInt32(n);
-        std::swap(*first, *(first + i));
-
-        // Move to the next element and decrement the number of possible
-        // positions remaining.
-        first++;
-        n--;
-      }
-    }
-
-    // for STL compatibility
-    UInt32 operator()(UInt32 n = MAX32) { return getUInt32(n); }
-
-    // normally used for debugging only
-    UInt64 getSeed() {return seed_;}
-
-    // for STL
-    typedef UInt32 argument_type;
-    typedef UInt32 result_type;
-
-    result_type max() { return MAX32; }
-    result_type min() { return 0; }
-
-    static const UInt32 MAX32;
-    static const UInt64 MAX64;
-
-    // called by the plugin framework so that plugins
-    // get the "global" seeder
-    static void initSeeder(const RandomSeedFuncPtr r);
-
-    static void shutdown();
+    unsigned long getSeed(void) {return seed_;}
 
   protected:
 
-    // each "universe" (application/plugin/python module) has its own instance,
-    // but the instance should be NULL in all but one
-    static Random *theInstanceP_;
-    // seeder_ is a function called by the constructor to get new random seeds
-    // If not set when we call Random constructor, then the singleton is allocated
-    // and seeder_ is set to a function that uses our singleton
-    // initFromPlatformServices can also be used to initialize the seeder_
-    static RandomSeedFuncPtr seeder_;
-
-    void reseed(UInt64 seed);
-
     RandomImpl *impl_;
-    UInt64 seed_;
-
-    friend class RandomTest;
-    friend std::ostream& operator<<(std::ostream&, const Random&);
-    friend std::istream& operator>>(std::istream&, Random&);
-    friend NTA_UInt64 GetRandomSeed();
-
+    unsigned long seed_;
   };
-
-  // serialization/deserialization
-  std::ostream& operator<<(std::ostream&, const Random&);
-  std::istream& operator>>(std::istream&, Random&);
-
-  // This function returns seeds from the Random singleton in our
-  // "universe" (application, plugin, python module). If, when the
-  // Random constructor is called, seeder_ is NULL, then seeder_ is
-  // set to this function. The plugin framework can override this
-  // behavior by explicitly setting the seeder to the RandomSeeder
-  // function provided by the application.
-  NTA_UInt64 GetRandomSeed();
-
 
 } // namespace nupic
 
