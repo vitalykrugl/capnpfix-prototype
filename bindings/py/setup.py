@@ -202,15 +202,9 @@ if __name__ == "__main__":
 
   # Copy the proto files into the proto Python package.
   destDir = os.path.relpath(os.path.join("nupic", "proto"))
-  print "ZZZ Preparing to copy capnp files to", destDir, os.path.abspath(destDir)
   for protoPath in glob.glob(os.path.relpath(os.path.join(
       "..", "..", "src", "nupic", "proto", "*.capnp"))):
-    print "ZZZ Copying capnp from", protoPath, "TO", destDir, "CWD:", os.getcwd()
-    if not os.path.isfile(protoPath):
-      print "ZZZ source capnp file not found", protoPath
     shutil.copy(os.path.abspath(protoPath), os.path.abspath(destDir))
-  for destPath in glob.glob(os.path.join(destDir, "*")):
-    print "ZZZ capnp file was copied:", destPath
 
   print "\nSetup SWIG Python module"
   setup(

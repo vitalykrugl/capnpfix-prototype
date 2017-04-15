@@ -83,13 +83,8 @@ namespace nupic {
   public:
 
     Random(unsigned long seed = 0);
+    Random(RandomProto::Reader& proto);
 
-    // support copy constructor and operator= -- these require non-default
-    // implementations because of the impl_ pointer.
-    // They do a deep copy of impl_ so that an RNG and its copy generate the
-    // same set of numbers.
-    Random(const Random&);
-    Random& operator=(const Random&);
     ~Random();
 
     // write serialized data
@@ -100,12 +95,12 @@ namespace nupic {
     using Serializable::read;
     void read(RandomProto::Reader& proto) override;
 
+
     // return a value uniformly distributed between 0 and max-1
     unsigned long getSeed(void) {return seed_;}
 
   protected:
 
-    RandomImpl *impl_;
     unsigned long seed_;
   };
 

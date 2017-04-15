@@ -51,6 +51,7 @@ _MATH = _math
  */
 
 #include <cmath>
+#include <Python.h>
 #include <nupic/types/Types.hpp>
 //#include <nupic/math/Utils.hpp>
 //#include <nupic/math/Math.hpp>
@@ -97,16 +98,53 @@ import_array();
 %extend nupic::Random {
 
 
-inline void write(PyObject* pyBuilder) const
+inline PyObject* writeAsBytes() const
 {
 %#if !CAPNP_LITE
-  RandomProto::Builder proto = nupic::getBuilder<RandomProto>(pyBuilder);
+  capnp::MallocMessageBuilder message;
+  RandomProto::Builder proto = message.initRoot<RandomProto>();
+
   self->write(proto);
+
+  // Extract message data and convert to Python byte object
+  auto array = capnp::messageToFlatArray(message);
+  const char* ptr = (const char *)array.begin();
+  PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
+  return result;
 %#else
   throw std::logic_error(
-      "Random.write is not implemented when compiled with CAPNP_LITE=1.");
+      "Random.writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
 %#endif
 }
+
+
+inline static Random* readFromBytes(PyObject* bytesPyObj) const
+{
+%#if !CAPNP_LITE
+  const char * srcBytes = nullptr;
+  int srcNumBytes = 0;
+  PyArg_Parse(bytesPyObj, "s#", &srcBytes, &srcNumBytes);
+
+  if (srcNumBytes % sizeof(capnp::word) != 0)
+  {
+    throw std::logic_error(
+        "Random.readFromBytes input length must be a multiple of capnp::word.");
+  }
+  const int srcNumWords = srcNumBytes / sizeof(capnp::word);
+
+  // Ensure alignment on capnp::word boundary; TODO can we do w/o this copy?
+  kj::Array<capnp::word> array = kj::heapArray<capnp::word>(srcNumWords);
+  memcpy(array.asBytes().begin(), srcBytes, srcNumBytes);
+
+  capnp::FlatArrayMessageReader reader(array.asPtr());
+  RandomProto::Reader proto = reader.getRoot<RandomProto>();
+  return new Random(proto);
+%#else
+  throw std::logic_error(
+      "Random.readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
+%#endif
+}
+
 
 inline void read(PyObject* pyReader)
 {
