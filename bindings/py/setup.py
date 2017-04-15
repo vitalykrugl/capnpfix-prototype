@@ -204,7 +204,7 @@ if __name__ == "__main__":
   destDir = os.path.relpath(os.path.join("nupic", "proto"))
   for protoPath in glob.glob(os.path.relpath(os.path.join(
       "..", "..", "src", "nupic", "proto", "*.capnp"))):
-    shutil.copy(protoPath, destDir)
+    shutil.copy(os.path.abspath(protoPath), os.path.abspath(destDir))
 
   print "\nSetup SWIG Python module"
   setup(
