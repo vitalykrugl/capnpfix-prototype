@@ -22,11 +22,9 @@
 import tempfile
 import unittest
 
-import capnp
-
 from nupic.bindings.math import Random
 
-from nupic.proto.RandomProto_capnp import RandomProto
+import capnp
 from PythonRandomParent_capnp import PythonRandomParentProto
 
 
@@ -42,14 +40,14 @@ class PythonRandomParent(object):
 
   def write(self, proto):
     proto.width = self.width
-    proto.random = RandomProto.from_bytes(self.rand.writeAsBytes())
+    proto.random = self.rand.writeOut()
 
 
   @classmethod
   def read(cls, proto):
     obj = object.__new__(cls)
     obj.width = proto.width
-    obj.rand = Random.readFromBytes(proto.random.as_builder().to_bytes())
+    obj.rand = Random.readIn(proto.random)
 
     return obj
 

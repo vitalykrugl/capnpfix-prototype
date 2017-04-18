@@ -24,6 +24,15 @@
 //%include <nupic/bindings/exception.i>
 
 %pythoncode %{
+
+try:
+  import capnp
+except ImportError:
+  capnp = None
+else:
+  from nupic.proto.RandomProto_capnp import RandomProto
+
+
 _MATH = _math
 %}
 
@@ -96,65 +105,90 @@ import_array();
 %include <nupic/utils/Random.hpp>
 
 %extend nupic::Random {
+  %pythoncode %{
+
+    def writeOut(self):
+      """ Serialize the instance using pycapnp.
+
+      :returns: RandomProto message reader containing the serialized data. This
+                value may be assigned to the corresponding property of the
+                higher-level message builder.
+      """
+      return RandomProto.from_bytes(self.writeAsBytes())
 
 
-inline PyObject* writeAsBytes() const
-{
-%#if !CAPNP_LITE
-  capnp::MallocMessageBuilder message;
-  RandomProto::Builder proto = message.initRoot<RandomProto>();
+    @staticmethod
+    def readIn(proto):
+      """ Deserialize the given RandomProto reader into a new Random instance.
 
-  self->write(proto);
+      :param proto: RandomProto message reader containing data from a previously
+                    serialized Random instance.
 
-  // Extract message data and convert to Python byte object
-  auto array = capnp::messageToFlatArray(message);
-  const char* ptr = (const char *)array.begin();
-  PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
-  return result;
-%#else
-  throw std::logic_error(
-      "Random.writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
-%#endif
-}
+      :returns: A new Random instance initialized from the contents of the given
+                RandomProto message reader.
+
+      """
+      return Random.readFromBytes(proto.as_builder().to_bytes())
+  %}
 
 
-inline static Random* readFromBytes(PyObject* bytesPyObj) const
-{
-%#if !CAPNP_LITE
-  const char * srcBytes = nullptr;
-  int srcNumBytes = 0;
-  PyArg_Parse(bytesPyObj, "s#", &srcBytes, &srcNumBytes);
-
-  if (srcNumBytes % sizeof(capnp::word) != 0)
+  inline PyObject* writeAsBytes() const
   {
+  %#if !CAPNP_LITE
+    capnp::MallocMessageBuilder message;
+    RandomProto::Builder proto = message.initRoot<RandomProto>();
+
+    self->write(proto);
+
+    // Extract message data and convert to Python byte object
+    auto array = capnp::messageToFlatArray(message);
+    const char* ptr = (const char *)array.begin();
+    PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
+    return result;
+  %#else
     throw std::logic_error(
-        "Random.readFromBytes input length must be a multiple of capnp::word.");
+        "Random.writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
+  %#endif
   }
-  const int srcNumWords = srcNumBytes / sizeof(capnp::word);
-
-  // Ensure alignment on capnp::word boundary; TODO can we do w/o this copy?
-  kj::Array<capnp::word> array = kj::heapArray<capnp::word>(srcNumWords);
-  memcpy(array.asBytes().begin(), srcBytes, srcNumBytes);
-
-  capnp::FlatArrayMessageReader reader(array.asPtr());
-  RandomProto::Reader proto = reader.getRoot<RandomProto>();
-  return new Random(proto);
-%#else
-  throw std::logic_error(
-      "Random.readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
-%#endif
-}
 
 
-inline void read(PyObject* pyReader)
-{
-%#if !CAPNP_LITE
-  RandomProto::Reader proto = nupic::getReader<RandomProto>(pyReader);
-  self->read(proto);
-%#else
-  throw std::logic_error(
-      "Random.read is not implemented when compiled with CAPNP_LITE=1.");
-%#endif
-}
+  inline static Random* readFromBytes(PyObject* bytesPyObj) const
+  {
+  %#if !CAPNP_LITE
+    const char * srcBytes = nullptr;
+    int srcNumBytes = 0;
+    PyArg_Parse(bytesPyObj, "s#", &srcBytes, &srcNumBytes);
+
+    if (srcNumBytes % sizeof(capnp::word) != 0)
+    {
+      throw std::logic_error(
+          "Random.readFromBytes input length must be a multiple of capnp::word.");
+    }
+    const int srcNumWords = srcNumBytes / sizeof(capnp::word);
+
+    // Ensure alignment on capnp::word boundary; TODO can we do w/o this copy?
+    kj::Array<capnp::word> array = kj::heapArray<capnp::word>(srcNumWords);
+    memcpy(array.asBytes().begin(), srcBytes, srcNumBytes);
+
+    capnp::FlatArrayMessageReader reader(array.asPtr());
+    RandomProto::Reader proto = reader.getRoot<RandomProto>();
+    return new Random(proto);
+  %#else
+    throw std::logic_error(
+        "Random.readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
+  %#endif
+  }
+
+
+  inline void read(PyObject* pyReader)
+  {
+  %#if !CAPNP_LITE
+    RandomProto::Reader proto = nupic::getReader<RandomProto>(pyReader);
+    self->read(proto);
+  %#else
+    throw std::logic_error(
+        "Random.read is not implemented when compiled with CAPNP_LITE=1.");
+  %#endif
+  }
 
 } // End extend nupic::Random.

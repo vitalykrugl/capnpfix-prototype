@@ -458,32 +458,6 @@ if (NUPIC_BUILD_PYEXT_MODULES)
   message(STATUS "CMAKE_SWIG_FLAGS        = ${CMAKE_SWIG_FLAGS}")
 
 
-  function(PREPEND_BOILERPLATE_TO_PYTHON_PROXY_MODULE
-           MODULE_NAME)
-    # Add a custom command to the Swig target to prepend boilerplate to the
-    # swig-generated python proxy module
-    # ${CMAKE_SWIG_OUTDIR}/${MODULE_NAME}.py. The boilerplate preloads
-    # the pycapnp extension shared library on Unix platforms.
-    #
-    # :param MODULE_NAME: the custom command will be added to the target
-    #   corresponding to this Swig module name.
-    set(preamble_filepath "${CMAKE_SOURCE_DIR}/src/nupic/bindings/swig_proxy_preamble.py")
-    set(module_filepath "${CMAKE_SWIG_OUTDIR}/${MODULE_NAME}.py")
-
-    add_custom_command(
-      TARGET ${SWIG_MODULE_${MODULE_NAME}_REAL_NAME}
-      POST_BUILD
-      COMMAND
-        ${CMAKE_COMMAND}
-            -DSRC_FILE_1=${preamble_filepath}
-            -DSRC_FILE_2=${module_filepath}
-            -DTARGET_FILE=${module_filepath}
-            -P ${CMAKE_SOURCE_DIR}/src/ConcatTwoFiles.cmake
-      COMMENT "Prepending ${preamble_filepath} to swig-generated module ${module_filepath}"
-    )
-  endfunction(PREPEND_BOILERPLATE_TO_PYTHON_PROXY_MODULE)
-
-
   function(BUILD_EXTENSION MODULE_NAME)
     # Create a nupic.bindings swig extension target with the given Swig module
     # name. Also, if PY_EXTENSIONS_DIR is specified, request
@@ -513,8 +487,6 @@ if (NUPIC_BUILD_PYEXT_MODULES)
       COMPILE_FLAGS ${src_swig_generated_file_compile_flags})
 
     swig_link_libraries(${MODULE_NAME} ${_SRC_SWIG_LINK_LIBRARIES})
-
-    prepend_boilerplate_to_python_proxy_module(${MODULE_NAME})
 
     set(real_target "${SWIG_MODULE_${MODULE_NAME}_REAL_NAME}")
 
