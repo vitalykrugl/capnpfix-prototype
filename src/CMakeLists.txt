@@ -204,33 +204,6 @@ set(src_py_support_files
     nupic/py_support/PyCapnp.cpp
 )
 
-#
-# pycapnp integration
-#
-if(NOT "${PLATFORM}" STREQUAL "windows")
-
-  # Add the pycapnp Python package headers to includes
-  execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" "-c"
-        "import capnp; import os; import sys; sys.stdout.write(os.path.dirname(os.path.dirname(capnp.__file__)))"
-        RESULT_VARIABLE src_pycapnp_include_result_code
-        OUTPUT_VARIABLE src_pycapnp_include_dir)
-
-  if(src_pycapnp_include_result_code)
-    message(FATAL_ERROR "ERROR: getting capnproto headers location "
-            "(${src_pycapnp_include_result_code})")
-  endif()
-
-  if(NOT src_pycapnp_include_dir)
-    message(FATAL_ERROR "ERROR: pycapnp's capnproto headers not found.")
-  endif()
-
-  message(STATUS "src_pycapnp_include_dir      = ${src_pycapnp_include_dir}")
-
-  include_directories(SYSTEM ${src_pycapnp_include_dir})
-endif()
-
-
 # List all .capnp files here. The C++ files will be generated and included
 # when compiling later on.
 set(src_capnp_specs_rel
@@ -336,7 +309,9 @@ include(src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
 
 set(src_lib_static_nupiccore_combined nupic_core)
 
-set(src_external_static_libs)
+set(src_external_static_libs
+    ${CAPNP_STATIC_LIB_TARGET}
+)
 
 #set(src_external_static_libs
 #    ${YAML_CPP_STATIC_LIB_TARGET}
@@ -345,12 +320,6 @@ set(src_external_static_libs)
 #    ${APRUTIL1_STATIC_LIB_TARGET}
 #    ${Z_STATIC_LIB_TARGET})
 
-# Add capnproto static lib when building nupic_core static lib without python
-# extensions. The extensions have their own logic governing whether to include
-# it.
-if (NOT NUPIC_BUILD_PYEXT_MODULES)
-  list(APPEND src_external_static_libs ${CAPNP_STATIC_LIB_TARGET})
-endif()
 
 set(src_combined_nupiccore_source_archives
     ${src_lib_static_nupiccore_solo}
@@ -371,12 +340,6 @@ set(src_common_test_exe_libs
     ${PYTHON_LIBRARIES}
     ${src_common_os_libs})
 
-# Add capnproto static lib to our C/C++ test apps when building python
-# extensions, since capnproto objects are excluded from nupic_core combined lib
-# to avoid conflict with capnproto methods compiled into the pycapnp extension
-if (NUPIC_BUILD_PYEXT_MODULES)
-  list(APPEND src_common_test_exe_libs ${CAPNP_STATIC_LIB_TARGET})
-endif()
 
 message(STATUS "src_common_test_exe_libs = ${src_common_test_exe_libs}")
 
@@ -481,13 +444,12 @@ if (NUPIC_BUILD_PYEXT_MODULES)
   # all symbols to resolve at link time, so we have to add libpython for this
   # platform
   #
-  # NOTE On Windows nupic.bindings builds, we include capnproto because we
-  # presently build self-contained CAPNP_LITE on Windows, and Windows
-  # nupic/nupic.bindings presently have no dependency on pycapnp.
+  # NOTE On Windows nupic.bindings builds we presently build self-contained
+  # CAPNP_LITE on Windows, and Windows nupic/nupic.bindings presently have no
+  # dependency on pycapnp.
   if("${PLATFORM}" STREQUAL "windows")
     list(APPEND _SRC_SWIG_LINK_LIBRARIES
-         ${PYTHON_LIBRARIES}
-         ${CAPNP_STATIC_LIB_TARGET})
+         ${PYTHON_LIBRARIES})
   endif()
 
   message(STATUS "_SRC_SWIG_EXTRA_DEPS     = ${_SRC_SWIG_EXTRA_DEPS}")

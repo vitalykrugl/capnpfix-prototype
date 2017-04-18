@@ -31,7 +31,9 @@ from PythonRandomParent_capnp import PythonRandomParentProto
 
 
 class PythonRandomParent(object):
-
+  """This class represents a serializable object that contains both native
+  python properties as well as properties implemented in an extension.
+  """
 
   def __init__(self, width, seed):
     self.width = width
