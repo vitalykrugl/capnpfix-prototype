@@ -114,7 +114,7 @@ import_array();
                 value may be assigned to the corresponding property of the
                 higher-level message builder.
       """
-      return RandomProto.from_bytes(self.writeAsBytes())
+      return RandomProto.from_bytes(self._writeAsBytes())
 
 
     @staticmethod
@@ -128,11 +128,11 @@ import_array();
                 RandomProto message reader.
 
       """
-      return Random.readFromBytes(proto.as_builder().to_bytes())
+      return Random._readFromBytes(proto.as_builder().to_bytes())
   %}
 
 
-  inline PyObject* writeAsBytes() const
+  inline PyObject* _writeAsBytes() const
   {
   %#if !CAPNP_LITE
     capnp::MallocMessageBuilder message;
@@ -147,12 +147,12 @@ import_array();
     return result;
   %#else
     throw std::logic_error(
-        "Random.writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
+        "Random._writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
   %#endif
   }
 
 
-  inline static Random* readFromBytes(PyObject* bytesPyObj) const
+  inline static Random* _readFromBytes(PyObject* bytesPyObj) const
   {
   %#if !CAPNP_LITE
     const char * srcBytes = nullptr;
@@ -162,7 +162,7 @@ import_array();
     if (srcNumBytes % sizeof(capnp::word) != 0)
     {
       throw std::logic_error(
-          "Random.readFromBytes input length must be a multiple of capnp::word.");
+          "Random._readFromBytes input length must be a multiple of capnp::word.");
     }
     const int srcNumWords = srcNumBytes / sizeof(capnp::word);
 
@@ -175,7 +175,7 @@ import_array();
     return new Random(proto);
   %#else
     throw std::logic_error(
-        "Random.readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
+        "Random._readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
   %#endif
   }
 
