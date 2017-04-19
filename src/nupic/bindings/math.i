@@ -148,7 +148,8 @@ import_array();
     const char* ptr = (const char *)array.begin();
     // TODO nupic::py::String usage was segfaulting, so using Py_BuildValue for now
     //nupic::py::String result(ptr, sizeof(capnp::word)*array.size());
-    PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
+    //PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
+    PyObject* result = PyString_FromStringAndSize(ptr, sizeof(capnp::word)*array.size());
     return result;
   %#else
     throw std::logic_error(
@@ -160,9 +161,12 @@ import_array();
   inline static Random* _readFromBytes(PyObject* bytesPyObj) const
   {
   %#if !CAPNP_LITE
-    const char * srcBytes = nullptr;
-    int srcNumBytes = 0;
-    PyArg_Parse(bytesPyObj, "s#", &srcBytes, &srcNumBytes);
+    //const char * srcBytes = nullptr;
+    //int srcNumBytes = 0;
+    char * srcBytes = nullptr;
+    Py_ssize_t srcNumBytes = 0;
+    //PyArg_Parse(bytesPyObj, "s#", &srcBytes, &srcNumBytes);
+    PyString_AsStringAndSize(bytesPyObj, &srcBytes, &srcNumBytes);
 
     if (srcNumBytes % sizeof(capnp::word) != 0)
     {
