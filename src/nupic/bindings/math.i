@@ -73,6 +73,9 @@ _MATH = _math
 #include <nupic/py_support/PyCapnp.hpp>
 #endif
 
+#include <nupic/py_support/PyHelpers.hpp>
+
+
 using namespace nupic;
 
 %}
@@ -143,6 +146,8 @@ import_array();
     // Extract message data and convert to Python byte object
     auto array = capnp::messageToFlatArray(message);
     const char* ptr = (const char *)array.begin();
+    // TODO nupic::py::String usage was segfaulting, so using Py_BuildValue for now
+    //nupic::py::String result(ptr, sizeof(capnp::word)*array.size());
     PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
     return result;
   %#else
@@ -166,7 +171,8 @@ import_array();
     }
     const int srcNumWords = srcNumBytes / sizeof(capnp::word);
 
-    // Ensure alignment on capnp::word boundary; TODO can we do w/o this copy?
+    // Ensure alignment on capnp::word boundary; TODO can we do w/o this copy or
+    // make copy conditional on alignment like pycapnp does?
     kj::Array<capnp::word> array = kj::heapArray<capnp::word>(srcNumWords);
     memcpy(array.asBytes().begin(), srcBytes, srcNumBytes);
 
