@@ -207,7 +207,10 @@ set(src_py_support_files
 # List all .capnp files here. The C++ files will be generated and included
 # when compiling later on.
 set(src_capnp_specs_rel
+  nupic/proto/NetworkProto.capnp
+  nupic/proto/PyRegionProto.capnp
   nupic/proto/RandomProto.capnp
+  nupic/proto/RegionProto.capnp
   nupic/proto/TemporalMemoryProto.capnp
 )
 
@@ -264,6 +267,7 @@ set(src_lib_static_nupiccore_solo nupic_core_solo)
 
 set(src_nupiccore_srcs
     nupic/algorithms/TemporalMemory.cpp
+    nupic/engine/Network.cpp
     nupic/types/BasicType.cpp
     nupic/utils/LoggingException.cpp
     nupic/utils/LogItem.cpp
@@ -543,6 +547,9 @@ if (NUPIC_BUILD_PYEXT_MODULES)
 
   # Algorithms
   build_extension("algorithms")
+
+  # Engine Internal
+  build_extension("engine_internal")
 
   # Math
   build_extension("math")

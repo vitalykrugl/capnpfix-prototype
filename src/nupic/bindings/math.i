@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
+ * Copyright (C) 2017, Numenta, Inc.  Unless you have an agreement
  * with Numenta, Inc., for a separate license for this software code, the
  * following terms and conditions apply:
  *
@@ -39,7 +39,7 @@ _MATH = _math
 %{
 /* ---------------------------------------------------------------------
  * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
+ * Copyright (C) 2017, Numenta, Inc.  Unless you have an agreement
  * with Numenta, Inc., for a separate license for this software code, the
  * following terms and conditions apply:
  *
@@ -70,7 +70,11 @@ _MATH = _math
 #include <numpy/arrayobject.h>
 
 #if !CAPNP_LITE
-#include <nupic/py_support/PyCapnp.hpp>
+  #include <capnp/common.h> // for `class word`
+  #include <capnp/message.h>
+  #include <capnp/schema-parser.h>
+  #include <capnp/serialize.h>
+  //#include <nupic/py_support/PyCapnp.hpp>
 #endif
 
 #include <nupic/py_support/PyHelpers.hpp>
@@ -94,10 +98,6 @@ import_array();
 
 %}
 
-
-///////////////////////////////////////////////////////////////////
-/// Utility functions that are expensive in Python but fast in C.
-///////////////////////////////////////////////////////////////////
 
 
 //--------------------------------------------------------------------------------
@@ -146,10 +146,7 @@ import_array();
     // Extract message data and convert to Python byte object
     auto array = capnp::messageToFlatArray(message);
     const char* ptr = (const char *)array.begin();
-    // TODO nupic::py::String usage was segfaulting, so using Py_BuildValue for now
-    //nupic::py::String result(ptr, sizeof(capnp::word)*array.size());
-    //PyObject* result = Py_BuildValue("s#", ptr, sizeof(capnp::word)*array.size());
-    PyObject* result = PyString_FromStringAndSize(ptr, sizeof(capnp::word)*array.size());
+    PyObject* result = PyString_FromStringAndSize(ptr, sizeof(capnp::word)*array.size()); // copy
     return result;
   %#else
     throw std::logic_error(
@@ -190,15 +187,15 @@ import_array();
   }
 
 
-  inline void read(PyObject* pyReader)
-  {
-  %#if !CAPNP_LITE
-    RandomProto::Reader proto = nupic::getReader<RandomProto>(pyReader);
-    self->read(proto);
-  %#else
-    throw std::logic_error(
-        "Random.read is not implemented when compiled with CAPNP_LITE=1.");
-  %#endif
-  }
+  //inline void read(PyObject* pyReader)
+  //{
+  //%#if !CAPNP_LITE
+  //  RandomProto::Reader proto = nupic::getReader<RandomProto>(pyReader);
+  //  self->read(proto);
+  //%#else
+  //  throw std::logic_error(
+  //      "Random.read is not implemented when compiled with CAPNP_LITE=1.");
+  //%#endif
+  //}
 
 } // End extend nupic::Random.
