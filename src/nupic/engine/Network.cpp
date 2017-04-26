@@ -27,7 +27,7 @@
 namespace nupic
 {
 
-Network::Network(std::string name)
+Network::Network()
   :_pyRegionModuleName(),
    _pyRegionClassName(),
    _pyRegion()
@@ -46,15 +46,15 @@ std::string Network::getPythonRegionClassName()
 }
 
 
-void Network::setPythonRegion(std::string module, std::string className,
-                              unsigned long seed)
+void Network::setPythonRegion(char* module, char* className,
+                              unsigned long width, unsigned long seed)
 {
   _pyRegionModuleName = module;
   _pyRegionClassName = className;
 
   py::Tuple args((Py_ssize_t)0);
   py::Dict kwargs;
-  kwargs.setItem("className", py::String(className));
+  kwargs.setItem("width", py::UnsignedLong(width));
   kwargs.setItem("seed", py::UnsignedLong(seed));
 
   _pyRegion.assign(py::Instance(module, className, args, kwargs));
@@ -75,15 +75,16 @@ PyRegionProto::Reader Network::_writePyRegion() const
   // Request python object to write itself out and return PyRegionProto
   // serialized as a python byte array
 
-  // NOTE Wrap the operation in our PyCapnpHelper class to simplify the
+  // NOTE Wrap the operation in our _PyCapnpHelper class to simplify the
   // interface for the targer python region implementation
-  py::Class pyCapnpHelperCls("nupic.bindings.engine_internal", "PyCapnpHelper");
+  py::Class pyCapnpHelperCls("nupic.bindings.engine_internal",
+                             "_PyCapnpHelper");
   py::Tuple args((Py_ssize_t)0);
   py::Dict kwargs;
   // NOTE py::Dict::setItem doesn't accept a const PyObject*, however we know
   // that we won't modify it, so casting trickery is okay here
   kwargs.setItem("region", (PyObject*)static_cast<const PyObject*>(_pyRegion));
-  kwargs.setItem("methodName", py::String("read"));
+  kwargs.setItem("methodName", py::String("write"));
 
   // Wrap result in py::Ptr to force dereferencing when going out of scope
   py::Ptr pyRegionProtoBytes(
@@ -143,8 +144,8 @@ PyObject* Network::_readPyRegion(const std::string& moduleName,
 
   // Construct the python region instance by thunking into python
 
-  // Wrap the operation in our PyCapnpHelper class to simplify the interface for
-  // the targer python region implementation
+  // Wrap the operation in our _PyCapnpHelper class to simplify the interface
+  // for the targer python region implementation
   py::Class regionCls(moduleName, className);
 
   py::Tuple args((Py_ssize_t)0);
@@ -153,7 +154,7 @@ PyObject* Network::_readPyRegion(const std::string& moduleName,
   kwargs.setItem("regionCls", regionCls);
   kwargs.setItem("methodName", py::String("read"));
 
-  py::Class pyCapnpHelperCls("nupic.bindings.engine_internal", "PyCapnpHelper");
+  py::Class pyCapnpHelperCls("nupic.bindings.engine_internal", "_PyCapnpHelper");
 
   PyObject* pyRegion = pyCapnpHelperCls.invoke("readPyRegion", args, kwargs);
   NTA_CHECK(pyRegion);

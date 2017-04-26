@@ -117,7 +117,7 @@ import_array();
                 value may be assigned to the corresponding property of the
                 higher-level message builder.
       """
-      return RandomProto.from_bytes(self._writeAsBytes())
+      return RandomProto.from_bytes(self._writeAsBytes()) # copy
 
 
     @staticmethod
@@ -131,7 +131,7 @@ import_array();
                 RandomProto message reader.
 
       """
-      return Random._readFromBytes(proto.as_builder().to_bytes())
+      return Random._readFromBytes(proto.as_builder().to_bytes()) # copy * 2 ?
   %}
 
 
@@ -198,4 +198,4 @@ import_array();
   //%#endif
   //}
 
-} // End extend nupic::Random.
+} // End extend nupic::Random

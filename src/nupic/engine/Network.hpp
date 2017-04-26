@@ -14,17 +14,22 @@
 
 namespace nupic
 {
+  /**
+   * This Network class is used for prototyping capnp-based serialization tasks
+   * that would normally be divided among Network, RegionImpl, and PyRegion
+   * classes in an actual nupic.core-based network.
+   */
   class Network
   {
   public:
-    Network(std::string name);
+    Network();
 
     virtual ~Network();
 
     std::string getPythonRegionClassName();
 
-    void setPythonRegion(std::string module, std::string className,
-                         unsigned long seed);
+    void setPythonRegion(char* module, char* className,
+                         unsigned long width, unsigned long seed);
 
     PyObject* getPythonRegion();
 

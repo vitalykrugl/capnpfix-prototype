@@ -2,7 +2,7 @@
 
 using import "/nupic/proto/RandomProto.capnp".RandomProto;
 
-struct PythonRandomParentProto {
+struct PythonDummyRegionProto {
   width @0 :UInt32;
   random @1 :RandomProto;
 }
