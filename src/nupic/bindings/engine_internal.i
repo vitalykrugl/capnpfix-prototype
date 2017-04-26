@@ -20,7 +20,7 @@
  * ---------------------------------------------------------------------
  */
 
-%module(package="bindings") math
+%module(package="bindings") engine_internal
 //%include <nupic/bindings/exception.i>
 
 %pythoncode %{
@@ -30,11 +30,10 @@ try:
 except ImportError:
   capnp = None
 else:
-  from nupic.proto.RandomProto_capnp import RandomProto
-
-
-_MATH = _math
+  from nupic.proto.PyRegionProto_capnp import PyRegionProto
+  from nupic.proto.NetworkProto_capnp import NetworkProto
 %}
+
 
 %{
 /* ---------------------------------------------------------------------
@@ -59,15 +58,8 @@ _MATH = _math
  * ---------------------------------------------------------------------
  */
 
-#include <cmath>
-#include <Python.h>
-#include <nupic/types/Types.hpp>
-//#include <nupic/math/Utils.hpp>
-//#include <nupic/math/Math.hpp>
-#include <nupic/proto/RandomProto.capnp.h>
-#include <nupic/utils/Random.hpp>
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/arrayobject.h>
+#include <nupic/proto/NetworkProto.capnp.h>
+#include <nupic/engine/Network.hpp>
 
 #if !CAPNP_LITE
   #include <capnp/common.h> // for `class word`
@@ -76,9 +68,6 @@ _MATH = _math
   #include <capnp/serialize.h>
   //#include <nupic/py_support/PyCapnp.hpp>
 #endif
-
-#include <nupic/py_support/PyHelpers.hpp>
-
 
 using namespace nupic;
 
@@ -94,44 +83,43 @@ using namespace nupic;
 %init %{
 
 // Perform necessary library initialization (in C++).
-import_array();
 
 %}
 
 
-
 //--------------------------------------------------------------------------------
 
-// ----- Random -----
+
+// ----- Newtwork -----
 
 %include <nupic/utils/LoggingException.hpp>
-%include <nupic/utils/Random.hpp>
+%include <nupic/engine/Network.hpp>
 
-%extend nupic::Random {
+%extend nupic::Network {
   %pythoncode %{
 
     def writeOut(self):
       """ Serialize the instance using pycapnp.
 
-      :returns: RandomProto message reader containing the serialized data. This
+      :returns: NetworkProto message reader containing the serialized data. This
                 value may be assigned to the corresponding property of the
                 higher-level message builder.
       """
-      return RandomProto.from_bytes(self._writeAsBytes()) # copy
+      return NetworkProto.from_bytes(self._writeAsBytes()) # copy
 
 
     @staticmethod
     def readIn(proto):
-      """ Deserialize the given RandomProto reader into a new Random instance.
+      """ Deserialize the given NetworkProto reader into a new Network instance.
 
-      :param proto: RandomProto message reader containing data from a previously
-                    serialized Random instance.
+      :param proto: NetworkProto message reader containing data from a previously
+                    serialized Network instance.
 
-      :returns: A new Random instance initialized from the contents of the given
-                RandomProto message reader.
+      :returns: A new Network instance initialized from the contents of the given
+                NetworkProto message reader.
 
       """
-      return Random._readFromBytes(proto.as_builder().to_bytes()) # copy * 2 ?
+      return Network._readFromBytes(proto.as_builder().to_bytes()) # copy * 2 ?
   %}
 
 
@@ -139,7 +127,7 @@ import_array();
   {
   %#if !CAPNP_LITE
     capnp::MallocMessageBuilder message;
-    RandomProto::Builder proto = message.initRoot<RandomProto>();
+    NetworkProto::Builder proto = message.initRoot<NetworkProto>();
 
     self->write(proto);
 
@@ -150,12 +138,12 @@ import_array();
     return result;
   %#else
     throw std::logic_error(
-        "Random._writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
+        "Network._writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
   %#endif
   }
 
 
-  inline static Random* _readFromBytes(PyObject* bytesPyObj) const
+  inline static Network* _readFromBytes(PyObject* bytesPyObj) const
   {
   %#if !CAPNP_LITE
     //const char * srcBytes = nullptr;
@@ -168,7 +156,7 @@ import_array();
     if (srcNumBytes % sizeof(capnp::word) != 0)
     {
       throw std::logic_error(
-          "Random._readFromBytes input length must be a multiple of capnp::word.");
+          "Network._readFromBytes input length must be a multiple of capnp::word.");
     }
     const int srcNumWords = srcNumBytes / sizeof(capnp::word);
 
@@ -178,24 +166,58 @@ import_array();
     memcpy(array.asBytes().begin(), srcBytes, srcNumBytes);
 
     capnp::FlatArrayMessageReader reader(array.asPtr());
-    RandomProto::Reader proto = reader.getRoot<RandomProto>();
-    return new Random(proto);
+    NetworkProto::Reader proto = reader.getRoot<NetworkProto>();
+    auto net = new nupic::Network();
+    net->read(proto);
+    return net;
   %#else
     throw std::logic_error(
-        "Random._readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
+        "Network._readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
   %#endif
   }
 
+} // End extend nupic::Network
 
-  //inline void read(PyObject* pyReader)
-  //{
-  //%#if !CAPNP_LITE
-  //  RandomProto::Reader proto = nupic::getReader<RandomProto>(pyReader);
-  //  self->read(proto);
-  //%#else
-  //  throw std::logic_error(
-  //      "Random.read is not implemented when compiled with CAPNP_LITE=1.");
-  //%#endif
-  //}
 
-} // End extend nupic::Random
+
+%pythoncode %{
+
+class _PyCapnpHelper(object):
+  """Only for use by the extension layer. Wraps certain serialization operations
+  from the C++ extension layer to simplify python-side implementation
+  """
+
+  @staticmethod
+  def writePyRegion(region, methodName):
+    """ Serialize the given python region using the given method name
+
+    :param region: Python region instance
+    :param methodName: Name of method to invoke on the region to serialize it.
+
+    :returns: Data bytes corresponding to the serialized PyRegionProto message
+    """
+    builderProto = PyRegionProto.new_message()
+    # Serialize
+    getattr(region, methodName)(builderProto)
+
+    return builderProto.to_bytes()
+
+
+  @staticmethod
+  def readPyRegion(pyRegionProtoBytes, regionCls, methodName):
+    """ Deserialize the given python region data bytes using the given method
+    name on the given class
+
+    :param pyRegionProtoBytes: data bytes string corresponding to the
+                               PyRegionProto message.
+    :param regionCls: Python region class
+    :param methodName: Name of method to invoke on the region to deserialize it.
+
+    :returns: The deserialized python region instance.
+    """
+    pyRegionProto = PyRegionProto.from_bytes(pyRegionProtoBytes)
+
+    return getattr(regionCls, methodName)(pyRegionProto)
+
+
+%} // pythoncode

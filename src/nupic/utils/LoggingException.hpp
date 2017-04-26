@@ -27,9 +27,10 @@
 #ifndef NTA_LOGGING_EXCEPTION_HPP
 #define NTA_LOGGING_EXCEPTION_HPP
 
-#include <nupic/types/Exception.hpp>
 #include <sstream>
-#include <vector> 
+#include <vector>
+
+#include <nupic/types/Exception.hpp>
 
 namespace nupic
 {
@@ -47,9 +48,9 @@ namespace nupic
     const char * getMessage() const override
     {
       // Make sure we use a persistent string. Otherwise the pointer may
-      // become invalid. 
+      // become invalid.
       // If the underlying stringstream object hasn't changed, don't regenerate lmessage_.
-      // This is important because if we catch this exception a second call to exception.what() 
+      // This is important because if we catch this exception a second call to exception.what()
       // will trash the buffer returned by a first call to exception.what()
       if (! lmessageValid_) {
         lmessage_ = ss_.str();
@@ -67,25 +68,25 @@ namespace nupic
         ss_ << elem << " ";
       ss_ << "]";
       return *this;
-    } 
+    }
 
     template <typename T> LoggingException& operator<<(const T& obj)
     {
-      // underlying stringstream changes, so let getMessage() know 
+      // underlying stringstream changes, so let getMessage() know
       // to regenerate lmessage_
       lmessageValid_ = false;
       ss_ << obj;
       return *this;
     }
 
-    LoggingException(const LoggingException& l) : Exception(l), 
-                                                  ss_(l.ss_.str()), 
-                                                  lmessage_(""), 
+    LoggingException(const LoggingException& l) : Exception(l),
+                                                  ss_(l.ss_.str()),
+                                                  lmessage_(""),
                                                   lmessageValid_(false),
                                                   alreadyLogged_(true) // copied exception does not log
 
     {
-      // make sure message string is up to date for debuggers. 
+      // make sure message string is up to date for debuggers.
       getMessage();
     }
 
