@@ -66,7 +66,7 @@ else:
   #include <capnp/message.h>
   #include <capnp/schema-parser.h>
   #include <capnp/serialize.h>
-  //#include <nupic/py_support/PyCapnp.hpp>
+  #include <nupic/py_support/PyCapnp.hpp>
 #endif
 
 using namespace nupic;
@@ -119,23 +119,28 @@ using namespace nupic;
                 NetworkProto message reader.
 
       """
-      return Network._readFromBytes(proto.as_builder().to_bytes()) # copy * 2 ?
+      return Network._readFromPyBytes(proto.as_builder().to_bytes()) # copy * 2 ?
   %}
 
 
   inline PyObject* _writeAsBytes() const
   {
   %#if !CAPNP_LITE
+    return PyCapnpHelper::writeAsBytes(*self);
+    #if 0
     capnp::MallocMessageBuilder message;
     NetworkProto::Builder proto = message.initRoot<NetworkProto>();
 
     self->write(proto);
 
     // Extract message data and convert to Python byte object
-    auto array = capnp::messageToFlatArray(message);
-    const char* ptr = (const char *)array.begin();
-    PyObject* result = PyString_FromStringAndSize(ptr, sizeof(capnp::word)*array.size()); // copy
+    kj::Array<capnp::word> array = capnp::messageToFlatArray(message); // copy
+    kj::ArrayPtr<kj::byte> byteArray = array.asBytes();
+    PyObject* result = PyString_FromStringAndSize(
+      (const char*)byteArray.begin(),
+      byteArray.size()); // copy
     return result;
+    #endif
   %#else
     throw std::logic_error(
         "Network._writeAsBytes is not implemented when compiled with CAPNP_LITE=1.");
@@ -143,20 +148,20 @@ using namespace nupic;
   }
 
 
-  inline static Network* _readFromBytes(PyObject* bytesPyObj) const
+  inline static Network* _readFromPyBytes(PyObject* pyBytes) const
   {
   %#if !CAPNP_LITE
-    //const char * srcBytes = nullptr;
-    //int srcNumBytes = 0;
+    return PyCapnpHelper::readFromPyBytes<nupic::Network, NetworkProto>(pyBytes);
+    #if 0
     char * srcBytes = nullptr;
     Py_ssize_t srcNumBytes = 0;
-    //PyArg_Parse(bytesPyObj, "s#", &srcBytes, &srcNumBytes);
-    PyString_AsStringAndSize(bytesPyObj, &srcBytes, &srcNumBytes);
+    //PyArg_Parse(pyBytes, "s#", &srcBytes, &srcNumBytes);
+    PyString_AsStringAndSize(pyBytes, &srcBytes, &srcNumBytes);
 
     if (srcNumBytes % sizeof(capnp::word) != 0)
     {
       throw std::logic_error(
-          "Network._readFromBytes input length must be a multiple of capnp::word.");
+          "Network._readFromPyBytes input length must be a multiple of capnp::word.");
     }
     const int srcNumWords = srcNumBytes / sizeof(capnp::word);
 
@@ -170,9 +175,10 @@ using namespace nupic;
     auto net = new nupic::Network();
     net->read(proto);
     return net;
+    #endif
   %#else
     throw std::logic_error(
-        "Network._readFromBytes is not implemented when compiled with CAPNP_LITE=1.");
+        "Network._readFromPyBytes is not implemented when compiled with CAPNP_LITE=1.");
   %#endif
   }
 

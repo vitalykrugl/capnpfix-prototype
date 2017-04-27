@@ -46,7 +46,7 @@ std::string Network::getPythonRegionClassName()
 }
 
 
-void Network::setPythonRegion(char* module, char* className,
+void Network::setPythonRegion(const char* module, const char* className,
                               unsigned long width, unsigned long seed)
 {
   _pyRegionModuleName = module;
@@ -138,9 +138,11 @@ PyObject* Network::_readPyRegion(const std::string& moduleName,
   // large.
   capnp::MallocMessageBuilder builder;
   builder.setRoot(pyRegionImplProto); // copy
-  auto array = capnp::messageToFlatArray(builder); // copy
-  py::String pyRegionImplBytes((const char *)array.begin(),
-                               sizeof(capnp::word)*array.size()); // copy
+  kj::Array<capnp::word> wordArray = capnp::messageToFlatArray(builder); // copy
+  kj::ArrayPtr<kj::byte> byteArray = wordArray.asBytes();
+  // Copy from array to PyObject so that we can pass it to the Python layer
+  py::String pyRegionImplBytes((const char *)byteArray.begin(),
+                               byteArray.size()); // copy
 
   // Construct the python region instance by thunking into python
 

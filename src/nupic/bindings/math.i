@@ -144,9 +144,11 @@ import_array();
     self->write(proto);
 
     // Extract message data and convert to Python byte object
-    auto array = capnp::messageToFlatArray(message);
-    const char* ptr = (const char *)array.begin();
-    PyObject* result = PyString_FromStringAndSize(ptr, sizeof(capnp::word)*array.size()); // copy
+    kj::Array<capnp::word> array = capnp::messageToFlatArray(message); // copy
+    kj::ArrayPtr<kj::byte> byteArray = array.asBytes();
+    PyObject* result = PyString_FromStringAndSize(
+      (const char*)byteArray.begin(),
+      byteArray.size()); // copy
     return result;
   %#else
     throw std::logic_error(

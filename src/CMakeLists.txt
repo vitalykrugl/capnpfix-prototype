@@ -266,7 +266,6 @@ message(STATUS "src_common_os_libs        = ${src_common_os_libs}")
 set(src_lib_static_nupiccore_solo nupic_core_solo)
 
 set(src_nupiccore_srcs
-    nupic/algorithms/TemporalMemory.cpp
     nupic/engine/Network.cpp
     nupic/types/BasicType.cpp
     nupic/utils/LoggingException.cpp
@@ -354,7 +353,6 @@ message(STATUS "src_common_test_exe_libs = ${src_common_test_exe_libs}")
 set(src_executable_gtests unit_tests)
 add_executable(${src_executable_gtests}
                test/unit/UnitTestMain.cpp
-               test/unit/algorithms/TemporalMemoryTest.cpp
                test/unit/utils/RandomTest.cpp)
 target_link_libraries(${src_executable_gtests}
                       ${src_lib_static_gtest}
@@ -544,9 +542,6 @@ if (NUPIC_BUILD_PYEXT_MODULES)
       "extra_deps=${extra_deps}, link_flags=${link_flags}")
   endfunction(BUILD_EXTENSION)
 
-
-  # Algorithms
-  build_extension("algorithms")
 
   # Engine Internal
   build_extension("engine_internal")
