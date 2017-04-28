@@ -10,6 +10,7 @@
 #include <nupic/proto/RegionProto.capnp.h>
 
 #include <nupic/py_support/PyHelpers.hpp>
+#include <nupic/types/Serializable.hpp>
 
 
 namespace nupic
@@ -19,7 +20,7 @@ namespace nupic
    * that would normally be divided among Network, RegionImpl, and PyRegion
    * classes in an actual nupic.core-based network.
    */
-  class Network
+  class Network : public nupic::Serializable<NetworkProto>
   {
   public:
     Network();
@@ -28,12 +29,14 @@ namespace nupic
 
     std::string getPythonRegionClassName();
 
-    void setPythonRegion(char* module, char* className,
+    void setPythonRegion(const char* module, const char* className,
                          unsigned long width, unsigned long seed);
 
     PyObject* getPythonRegion();
 
+    using Serializable::write;
     void write(NetworkProto::Builder& proto) const;
+    using Serializable::read;
     void read(NetworkProto::Reader& proto);
   private:
     PyRegionProto::Reader _writePyRegion() const;

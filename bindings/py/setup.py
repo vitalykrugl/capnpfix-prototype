@@ -150,7 +150,7 @@ def getExtensionFileNames(platform):
     libExtension = "pyd"
   else:
     libExtension = "so"
-  libNames = ("algorithms", "math")
+  libNames = ("engine_internal", "math")
   swigPythonFiles = ["{}.py".format(name) for name in libNames]
   swigLibFiles = ["_{}.{}".format(name, libExtension) for name in libNames]
   files = [os.path.join(PY_BINDINGS, "nupic", "bindings", name)
